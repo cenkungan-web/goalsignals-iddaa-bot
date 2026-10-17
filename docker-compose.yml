@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  bilyoner-bot:
+    build: .
+    container_name: bilyoner-bot
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

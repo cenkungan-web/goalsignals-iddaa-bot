@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goal Signals Iddaa Bot | İddaa Oran Eşleştirme & Bülten Botu</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            900: '#064e3b',
+                        },
+                        darkbg: '#0b0f17',
+                        cardbg: '#161f30',
+                        borderbg: '#222f47'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="bg-[#0b0f17] text-slate-100 min-h-screen flex flex-col">
+
+    <!-- Top Navigation -->
+    <header class="border-b border-slate-800/80 bg-[#0f172a]/90 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-emerald-400 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                    <i class="fa-solid fa-satellite-dish text-white text-xl"></i>
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xl font-black tracking-tight text-white">Goal Signals <span class="text-emerald-400">Iddaa Bot</span></span>
+                        <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">PRO v2.0</span>
+                    </div>
+                    <p class="text-xs text-slate-400 hidden sm:block">İddaa Oran Eşleştirme & Bülten Botu</p>
+                </div>
+            </div>
+
+            <!-- Header Status & Actions -->
+            <div class="flex items-center space-x-3">
+                <div id="bulletinStatusBadge" class="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 text-xs">
+                    <span id="statusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                    <span id="statusText" class="text-slate-300 font-medium">Bülten Hazır</span>
+                    <span id="matchCountBadge" class="bg-emerald-500/20 text-emerald-400 font-bold px-1.5 py-0.2 rounded text-[11px]">0 Maç</span>
+                </div>
+
+                <button id="btnRescan" onclick="triggerScan()" class="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition cursor-pointer">
+                    <i id="rescanIcon" class="fa-solid fa-arrows-rotate"></i>
+                    <span>Bülteni Güncelle</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- Scanning Progress Banner (Appears while scanning) -->
+        <div id="scanningBanner" class="hidden glass-panel p-4 rounded-xl border border-emerald-500/30 bg-emerald-950/20">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center space-x-3">
+                    <div class="w-3 h-3 rounded-full bg-emerald-400 scanning-pulse"></div>
+                    <span id="scanStatusMsg" class="text-sm font-semibold text-emerald-300">İddaa bülteni taranıyor...</span>
+                </div>
+                <span id="scanPercentText" class="text-sm font-bold text-emerald-400">%0</span>
+            </div>
+            <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                <div id="scanProgressBar" class="bg-gradient-to-r from-emerald-500 to-teal-400 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Quick Multi-Presets -->
+        <div class="glass-panel p-3.5 rounded-xl flex items-center justify-between flex-wrap gap-2">
+            <div class="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+                <i class="fa-solid fa-wand-magic-sparkles text-emerald-400"></i>
+                <span>Hızlı Arama Şablonları:</span>
+            </div>
+            <div class="flex items-center flex-wrap gap-1.5">
+                <button onclick="applyMultiPreset([
+                    {market: 'İlk Yarı Skoru', selection: '0:0', odd: 2.20, tolerance: 0.05},
+                    {market: 'Maç Sonucu', selection: 'MS 1', odd: 1.80, tolerance: 0.10}
+                ], 'AND')" class="preset-pill px-2.5 py-1 rounded-md text-xs font-medium bg-slate-800 text-slate-200 border border-slate-700/80">
+                    🔥 [VE] İY 0-0 (2.20) + MS 1 (1.80)
+                </button>
+
+                <button onclick="applyMultiPreset([
+                    {market: 'İlk Yarı Skoru', selection: '0:0', odd: 2.20, tolerance: 0.05},
+                    {market: 'Toplam Gol Alt/Üst', selection: '2,5 Alt', odd: 1.70, tolerance: 0.10}
+                ], 'AND')" class="preset-pill px-2.5 py-1 rounded-md text-xs font-medium bg-slate-800 text-slate-200 border border-slate-700/80">
+                    ⚽ [VE] İY 0-0 (2.20) + 2.5 Alt (1.70)
+                </button>
+
+                <button onclick="applyMultiPreset([
+                    {market: 'Karşılıklı Gol', selection: 'KG Var', odd: 1.75, tolerance: 0.05},
+                    {market: 'Toplam Gol Alt/Üst', selection: '2,5 Üst', odd: 1.90, tolerance: 0.05}
+                ], 'AND')" class="preset-pill px-2.5 py-1 rounded-md text-xs font-medium bg-slate-800 text-slate-200 border border-slate-700/80">
+                    📈 [VE] KG Var (1.75) + 2.5 Üst (1.90)
+                </button>
+
+                <button onclick="applyMultiPreset([
+                    {market: 'İlk Yarı Skoru', selection: '0:0', odd: 2.20, tolerance: 0.05}
+                ], 'AND')" class="preset-pill px-2.5 py-1 rounded-md text-xs font-medium bg-slate-800 text-slate-200 border border-slate-700/80">
+                    🎯 [Tekli] İY Skor 0-0 = 2.20
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Search Card (Multi-Criteria Builder) -->
+        <div class="glass-panel p-6 rounded-2xl shadow-xl relative overflow-hidden">
+            <div class="absolute -top-24 -right-24 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+            <!-- Card Header: Title & Mode Toggle -->
+            <div class="border-b border-slate-800 pb-4 mb-5 flex items-center justify-between flex-wrap gap-3">
+                <div>
+                    <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-layer-group text-emerald-400"></i>
+                        <span>Çoklu Market & Oran Kriterleri</span>
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">2-3 veya daha fazla oran kriteri belirleyin; aynı maçta veya bültende eşleşenleri anında bulun.</p>
+                </div>
+
+                <!-- AND / OR Match Mode Toggle -->
+                <div class="flex items-center space-x-2 bg-slate-900/90 p-1 rounded-xl border border-slate-700">
+                    <button type="button" id="btnModeAND" onclick="setMatchMode('AND')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-emerald-600 text-white shadow-sm flex items-center space-x-1.5">
+                        <i class="fa-solid fa-link text-[10px]"></i>
+                        <span>VE (Aynı Maçta Tümü)</span>
+                    </button>
+                    <button type="button" id="btnModeOR" onclick="setMatchMode('OR')" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-code-fork text-[10px]"></i>
+                        <span>VEYA (Herhangi Biri)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dynamic Criteria Container -->
+            <div id="criteriaContainer" class="space-y-3">
+                <!-- Injected via JavaScript -->
+            </div>
+
+            <!-- Add Criterion & Action Bar -->
+            <div class="flex items-center justify-between pt-4 mt-2 border-t border-slate-800/80 flex-wrap gap-2">
+                <button type="button" onclick="addCriterionRow()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-bold border border-slate-700 transition flex items-center space-x-2">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>+ Yeni Oran Kriteri Ekle (2. veya 3. Seçenek)</span>
+                </button>
+
+                <button onclick="resetFilters()" class="text-xs font-medium text-slate-400 hover:text-emerald-400 transition flex items-center space-x-1">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span>Sıfırla</span>
+                </button>
+            </div>
+
+            <!-- Optional League / Team Text search -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-slate-800/60">
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                        <i class="fa-solid fa-trophy text-xs"></i>
+                    </span>
+                    <input type="text" id="inputLeague" placeholder="Lig Filtresi (örn. Süper Lig, Premier Lig, Brezilya...)" class="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-900/60 border border-slate-800 focus:border-emerald-500 text-xs text-white placeholder-slate-500">
+                </div>
+
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                        <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                    </span>
+                    <input type="text" id="inputMatchText" placeholder="Takım Ara (örn. Galatasaray, Real Madrid, Liverpool...)" class="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-900/60 border border-slate-800 focus:border-emerald-500 text-xs text-white placeholder-slate-500">
+                </div>
+            </div>
+
+            <!-- Action Search Button -->
+            <div class="mt-6 flex items-center justify-between flex-wrap gap-3">
+                <div class="text-xs text-slate-400 flex items-center space-x-2">
+                    <i class="fa-solid fa-circle-info text-emerald-400"></i>
+                    <span id="searchCriteriaSummary">Kriterler hazırlanıyor...</span>
+                </div>
+
+                <button onclick="executeSearch()" id="btnSearch" class="glow-btn px-7 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-sm flex items-center space-x-2 shadow-lg cursor-pointer">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <span>EŞLEŞEN MAÇLARI BUL</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Search Results Section -->
+        <div class="space-y-4">
+            <!-- Results Header -->
+            <div class="flex items-center justify-between flex-wrap gap-2">
+                <div class="flex items-center space-x-3">
+                    <h3 class="text-lg font-bold text-white flex items-center space-x-2">
+                        <span>Eşleşen Maçlar</span>
+                    </h3>
+                    <span id="resultsCountBadge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        0 Maç Bulundu
+                    </span>
+                </div>
+
+                <!-- Sort options -->
+                <div class="flex items-center space-x-2 text-xs">
+                    <span class="text-slate-400">Sırala:</span>
+                    <select id="selectSort" onchange="sortAndRenderResults()" class="px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none">
+                        <option value="odd_asc">Oran: Düşükten Yükseğe</option>
+                        <option value="odd_desc">Oran: Yüksekten Düşüğe</option>
+                        <option value="time">Maç Saati</option>
+                        <option value="league">Lig Adı</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Results Container -->
+            <div id="resultsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Match cards dynamically injected here -->
+            </div>
+
+            <!-- Empty State Message -->
+            <div id="emptyState" class="hidden glass-panel p-12 rounded-2xl text-center space-y-3">
+                <div class="w-16 h-16 mx-auto rounded-full bg-slate-800 flex items-center justify-center text-slate-500 text-2xl">
+                    <i class="fa-solid fa-futbol"></i>
+                </div>
+                <h4 class="text-base font-bold text-white">Bu Kriterlere Uyan Maç Bulunamadı</h4>
+                <p class="text-xs text-slate-400 max-w-md mx-auto" id="emptyStateHelp">
+                    Aynı maçta tüm kriterlerin eşleşmesi için toleransları biraz açabilir (örn. ±0.10) ya da "VEYA" modunu deneyebilirsiniz.
+                </p>
+                <div class="pt-2 flex items-center justify-center space-x-3">
+                    <button onclick="broadenAllTolerances()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-semibold border border-slate-700 transition">
+                        Tüm Toleransları ±0.10 Yap
+                    </button>
+                    <button onclick="setMatchMode('OR'); executeSearch();" class="px-4 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 text-xs font-semibold border border-emerald-500/30 transition">
+                        VEYA Moduna Geç
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="hidden glass-panel p-12 rounded-2xl text-center space-y-3">
+                <div class="w-12 h-12 mx-auto rounded-full border-2 border-emerald-500 border-t-transparent animate-spin"></div>
+                <p class="text-sm font-semibold text-slate-300">İddaa bültenindeki maçlar kriterlere göre filtreleniyor...</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Global Datalists for Market Autocomplete -->
+    <datalist id="globalMarketList">
+        <option value="İlk Yarı Skoru">
+        <option value="Maç Skoru">
+        <option value="Maç Sonucu">
+        <option value="Toplam Gol Alt/Üst">
+        <option value="İlk Yarı Gol Alt/Üst">
+        <option value="Karşılıklı Gol">
+        <option value="İlk Yarı / Maç Sonucu">
+        <option value="İlk Yarı Sonucu">
+        <option value="Çifte Şans">
+        <option value="İlk Yarı Çifte Şans">
+        <option value="İlk Yarı Karşılıklı Gol">
+        <option value="Ev Sahibi Gol Alt/Üst">
+        <option value="Deplasman Gol Alt/Üst">
+        <option value="Toplam Gol Aralığı">
+    </datalist>
+
+    <datalist id="globalSelectionList">
+        <option value="0:0">
+        <option value="1:0">
+        <option value="0:1">
+        <option value="1:1">
+        <option value="2:0">
+        <option value="2:1">
+        <option value="MS 1">
+        <option value="MS X">
+        <option value="MS 2">
+        <option value="KG Var">
+        <option value="KG Yok">
+        <option value="2,5 Üst">
+        <option value="2,5 Alt">
+        <option value="1,5 Üst">
+        <option value="1,5 Alt">
+    </datalist>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 bg-[#0f172a]/60 py-5 text-center text-xs text-slate-400 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <div class="font-bold text-slate-200">
+                Goal Signals <span class="text-emerald-400">Iddaa Bot</span>
+            </div>
+            <div class="text-slate-400">
+                İddaa Oran Eşleştirme & Bülten Botu
+            </div>
+        </div>
+    </footer>
+
+    <!-- App Script -->
+    <script src="/static/app.js"></script>
+</body>
+</html>
